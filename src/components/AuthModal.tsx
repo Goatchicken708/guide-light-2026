@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Mail, Lock, User, Loader2 } from 'lucide-react';
+import { X, Mail, Lock, User, Loader2, Bot } from 'lucide-react';
 import { auth, db } from '../lib/firebase';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
@@ -176,9 +176,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, type }) =
           <X className="h-6 w-6" />
         </button>
 
-        <h1 className="text-2xl font-bold text-center mb-6 pt-4 text-black">
-          {isLogin ? 'Sign In' : 'Register'}
-        </h1>
+        <div className="flex flex-col items-center mb-6 pt-4">
+          <div className="w-16 h-16 bg-gradient-to-br from-[#10b981] to-[#059669] rounded-2xl flex items-center justify-center shadow-xl shadow-[#10b981]/20 transform hover:rotate-6 transition-transform">
+            <Bot className="w-10 h-10 text-white" />
+          </div>
+          <h1 className="text-2xl font-bold text-center mt-4 text-black">
+            {isLogin ? 'Sign In' : 'Register'}
+          </h1>
+        </div>
 
         <form onSubmit={handleSubmit} className="px-4">
           {!isLogin && (

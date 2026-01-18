@@ -12,7 +12,7 @@ import {
   sendPasswordResetEmail
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Bot } from 'lucide-react';
 import { validateUsername, validateEmail } from '../lib/security';
 
 type FormType = 'login' | 'register' | 'reset';
@@ -244,9 +244,14 @@ export const Home = () => {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-[#e2e2e2] to-[#c9d6ff] p-4 font-['Poppins']">
         <div className="bg-white rounded-[10px] shadow-[0_20px_35px_rgba(0,0,1,0.9)] w-[450px] p-6 relative z-10 transition-all duration-300">
 
-          <h1 className="text-2xl font-bold text-center mb-6 pt-4 text-black">
-            {formType === 'login' ? 'Sign In' : formType === 'register' ? 'Register' : 'Reset Password'}
-          </h1>
+          <div className="flex flex-col items-center mb-6 pt-4">
+            <div className="w-16 h-16 bg-gradient-to-br from-[#10b981] to-[#059669] rounded-2xl flex items-center justify-center shadow-xl shadow-[#10b981]/20 transform hover:rotate-6 transition-transform">
+              <Bot className="w-10 h-10 text-white" />
+            </div>
+            <h1 className="text-2xl font-bold text-center mt-4 text-black">
+              {formType === 'login' ? 'Sign In' : formType === 'register' ? 'Register' : 'Reset Password'}
+            </h1>
+          </div>
 
           {error && (
             <div className="mb-4 p-2.5 bg-red-100 border border-red-300 rounded-lg text-red-600 text-xs text-center">

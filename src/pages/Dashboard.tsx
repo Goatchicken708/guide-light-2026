@@ -809,7 +809,7 @@ export const Dashboard = () => {
                     <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-[#0e1621] rounded-full" />
                   )}
                 </div>
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 text-left min-w-0">
                   <div className="flex items-baseline justify-between mb-0.5">
                     <span className="font-medium text-white text-[15px] truncate flex-1">{conv.username}</span>
                     <span className="text-[13px] text-gray-500 ml-2 flex-shrink-0">

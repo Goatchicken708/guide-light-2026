@@ -18,7 +18,6 @@ This project is a comprehensive application built with a modern web technology s
 - **Platform**: [Firebase](https://firebase.google.com/)
 - **Authentication**: Firebase Authentication
 - **Database**: Cloud Firestore (NoSQL database)
-- **Hosting**: Firebase Hosting (for the web version)
 
 ## Routing & State
 - **Routing**: [React Router](https://reactrouter.com/) (Standard routing library for React)

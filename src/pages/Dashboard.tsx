@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { Search, Mail, Send, Paperclip, Loader2, Settings, Menu, Volume2, VolumeX, ArrowDown, X, ArrowLeft, Reply, Check, CheckCheck, Shield, Edit, Plus, Users, Bot } from 'lucide-react';
+import { Search, Send, Paperclip, Loader2, Settings, Menu, Volume2, VolumeX, ArrowDown, X, ArrowLeft, Reply, Check, CheckCheck, Shield, Edit, Plus, Users, Bot } from 'lucide-react';
 import { db } from '../lib/firebase';
 import { collection, query, where, orderBy, onSnapshot, addDoc, getDocs, Timestamp, writeBatch, doc, getDoc } from 'firebase/firestore';
 import { useAuth } from '../lib/AuthContext';
@@ -767,7 +767,9 @@ export const Dashboard = () => {
             ))
           ) : conversations.length === 0 ? (
             <div className="px-8 py-12 text-center">
-              <Mail className="w-10 h-10 text-gray-600 mx-auto mb-3 opacity-50" />
+              <div className="w-16 h-16 bg-gradient-to-br from-[#10b981] to-[#059669] rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-[#10b981]/10 opacity-80">
+                <Bot className="w-8 h-8 text-white" />
+              </div>
               <p className="text-sm text-gray-400">No conversations yet</p>
               <p className="text-xs text-gray-500 mt-1">Search for users to start chatting</p>
             </div>
@@ -845,69 +847,71 @@ export const Dashboard = () => {
       </div>
 
       {/* Menu Sidebar */}
-      {menuOpen && (
-        <>
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40"
-            onClick={() => setMenuOpen(false)}
-          />
+      {
+        menuOpen && (
+          <>
+            {/* Backdrop */}
+            <div
+              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40"
+              onClick={() => setMenuOpen(false)}
+            />
 
-          {/* Menu */}
-          <div className="fixed left-0 top-0 bottom-0 w-[280px] bg-[#0e1621] z-50 border-r border-[#1a2332] shadow-xl transform transition-transform duration-300">
-            <div className="flex flex-col h-full">
-              {/* Header */}
-              <div className="px-4 py-3 border-b border-[#1a2332] flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-white">Menu</h3>
-                <button
-                  onClick={() => setMenuOpen(false)}
-                  className="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-[#1a2332] transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
+            {/* Menu */}
+            <div className="fixed left-0 top-0 bottom-0 w-[280px] bg-[#0e1621] z-50 border-r border-[#1a2332] shadow-xl transform transition-transform duration-300">
+              <div className="flex flex-col h-full">
+                {/* Header */}
+                <div className="px-4 py-3 border-b border-[#1a2332] flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-white">Menu</h3>
+                  <button
+                    onClick={() => setMenuOpen(false)}
+                    className="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-[#1a2332] transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
 
-              {/* Menu Items */}
-              <div className="flex-1 p-2">
-                <button
-                  onClick={() => {
-                    toggleSound();
-                    setMenuOpen(false);
-                  }}
-                  className="w-full flex items-center gap-3 px-4 py-3 text-left text-gray-300 hover:text-white hover:bg-[#1a2332] rounded-lg transition-colors"
-                >
-                  {soundMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
-                  <span>{soundMuted ? 'Unmute sounds' : 'Mute sounds'}</span>
-                </button>
-
-                {isAdmin && (
+                {/* Menu Items */}
+                <div className="flex-1 p-2">
                   <button
                     onClick={() => {
-                      navigate('/admin');
+                      toggleSound();
                       setMenuOpen(false);
                     }}
                     className="w-full flex items-center gap-3 px-4 py-3 text-left text-gray-300 hover:text-white hover:bg-[#1a2332] rounded-lg transition-colors"
                   >
-                    <Shield className="w-5 h-5" />
-                    <span>Admin Panel</span>
+                    {soundMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+                    <span>{soundMuted ? 'Unmute sounds' : 'Mute sounds'}</span>
                   </button>
-                )}
 
-                <button
-                  onClick={() => {
-                    setShowSettings(true);
-                    setMenuOpen(false);
-                  }}
-                  className="w-full flex items-center gap-3 px-4 py-3 text-left text-gray-300 hover:text-white hover:bg-[#1a2332] rounded-lg transition-colors"
-                >
-                  <Settings className="w-5 h-5" />
-                  <span>Settings</span>
-                </button>
+                  {isAdmin && (
+                    <button
+                      onClick={() => {
+                        navigate('/admin');
+                        setMenuOpen(false);
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-left text-gray-300 hover:text-white hover:bg-[#1a2332] rounded-lg transition-colors"
+                    >
+                      <Shield className="w-5 h-5" />
+                      <span>Admin Panel</span>
+                    </button>
+                  )}
+
+                  <button
+                    onClick={() => {
+                      setShowSettings(true);
+                      setMenuOpen(false);
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-left text-gray-300 hover:text-white hover:bg-[#1a2332] rounded-lg transition-colors"
+                  >
+                    <Settings className="w-5 h-5" />
+                    <span>Settings</span>
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        </>
-      )}
+          </>
+        )
+      }
 
       {/* Chat Area */}
       <div className="flex-1 flex flex-col bg-[#121a24] relative overflow-hidden min-w-0">
@@ -1166,8 +1170,8 @@ export const Dashboard = () => {
               </button>
             )}
             <div className="text-center max-w-sm px-6">
-              <div className="w-24 h-24 bg-[#10b981]/10 rounded-full flex items-center justify-center mx-auto mb-6 ring-1 ring-[#10b981]/20">
-                <Mail className="w-12 h-12 text-[#10b981]" />
+              <div className="w-24 h-24 bg-gradient-to-br from-[#10b981] to-[#059669] rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-lg shadow-[#10b981]/20 transform hover:scale-110 transition-transform duration-300 ring-4 ring-white/5">
+                <Bot className="w-12 h-12 text-white" />
               </div>
               <h3 className="text-2xl font-bold text-white mb-3">Welcome to Guide Light</h3>
               <p className="text-gray-400 mb-2">Select a conversation from the sidebar to start messaging</p>
@@ -1206,6 +1210,6 @@ export const Dashboard = () => {
         }}
       />
       <SettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} user={user} />
-    </div>
+    </div >
   );
 };

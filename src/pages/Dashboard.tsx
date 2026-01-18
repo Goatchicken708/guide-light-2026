@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { Search, Phone, Mail, FileText, Send, Paperclip, Loader2, Settings, Menu, Volume2, VolumeX, ArrowDown, X, ArrowLeft, Reply, Check, CheckCheck, Shield, Edit } from 'lucide-react';
+import { Search, Mail, Send, Paperclip, Loader2, Settings, Menu, Volume2, VolumeX, ArrowDown, X, ArrowLeft, Reply, Check, CheckCheck, Shield, Edit, Plus } from 'lucide-react';
 import { db } from '../lib/firebase';
-import { collection, query, where, orderBy, onSnapshot, addDoc, getDocs, Timestamp, writeBatch, doc, updateDoc, getDoc } from 'firebase/firestore';
+import { collection, query, where, orderBy, onSnapshot, addDoc, getDocs, Timestamp, writeBatch, doc, getDoc } from 'firebase/firestore';
 import { useAuth } from '../lib/AuthContext';
 import { SettingsModal } from '../components/SettingsModal';
+import { CreateGroupModal } from '../components/CreateGroupModal';
+import { GroupChat } from '../components/GroupChat';
+import { RoleSelectionModal } from '../components/RoleSelectionModal';
 import { soundManager } from '../lib/sounds';
 import { useResponsive } from '../hooks/useResponsive';
 import { typingManager } from '../lib/typing';
@@ -43,6 +46,7 @@ interface Conversation {
   lastMessageTime: any;
   unreadCount: number;
   online: boolean;
+  isGroup?: boolean;
 }
 
 const getColorForUser = (userId: string): string => {
@@ -109,6 +113,9 @@ export const Dashboard = () => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [searchResults, setSearchResults] = useState<Profile[]>([]);
   const [selectedUser, setSelectedUser] = useState<Profile | null>(null);
+  const [activeGroup, setActiveGroup] = useState<any>(null);
+  const [showCreateGroup, setShowCreateGroup] = useState(false);
+  const [showRoleSelection, setShowRoleSelection] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -133,6 +140,22 @@ export const Dashboard = () => {
   const MAX_MESSAGE_LENGTH = 4096;
 
   // Check if user is admin
+  useEffect(() => {
+    if (!user) return;
+    const checkRole = async () => {
+      try {
+        const docRef = doc(db, 'profiles', user.uid);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists() && !docSnap.data().role) {
+          setShowRoleSelection(true);
+        }
+      } catch (error) {
+        console.error('Error checking role:', error);
+      }
+    };
+    checkRole();
+  }, [user]);
+
   useEffect(() => {
     if (!user) return;
     const checkAdmin = async () => {
@@ -176,7 +199,7 @@ export const Dashboard = () => {
   const autoResizeTextarea = () => {
     const textarea = textareaRef.current;
     if (!textarea) return;
-    
+
     textarea.style.height = '40px';
     const newHeight = Math.min(Math.max(textarea.scrollHeight, 40), 200);
     textarea.style.height = `${newHeight}px`;
@@ -216,7 +239,7 @@ export const Dashboard = () => {
       const { scrollTop, scrollHeight, clientHeight } = container;
       const isNearBottom = scrollHeight - scrollTop - clientHeight < 200;
       setShowScrollButton(!isNearBottom);
-      
+
       if (isNearBottom) {
         setUnreadMessagesCount(0);
       }
@@ -280,11 +303,11 @@ export const Dashboard = () => {
       const date = timestamp?.toDate ? timestamp.toDate() : new Date(timestamp);
       const now = new Date();
       const diff = now.getTime() - date.getTime();
-      
+
       const minutes = Math.floor(diff / 60000);
       const hours = Math.floor(diff / 3600000);
       const days = Math.floor(diff / 86400000);
-      
+
       if (minutes < 1) return 'Just now';
       if (minutes < 60) return `${minutes}m ago`;
       if (hours < 24) return `${hours}h ago`;
@@ -302,10 +325,10 @@ export const Dashboard = () => {
       const date = timestamp?.toDate ? timestamp.toDate() : new Date(timestamp);
       const now = new Date();
       const diff = now.getTime() - date.getTime();
-      
+
       const minutes = Math.floor(diff / 60000);
       const hours = Math.floor(diff / 3600000);
-      
+
       if (minutes < 1) return 'now';
       if (minutes < 60) return `${minutes}m`;
       if (hours < 24) return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
@@ -315,16 +338,12 @@ export const Dashboard = () => {
     }
   };
 
-  const truncateMessage = (text: string, maxLength: number = 35) => {
-    if (!text) return '';
-    if (text.length <= maxLength) return text;
-    return text.substring(0, maxLength) + '...';
-  };
+
 
   const shouldGroupMessages = (currentMsg: Message, prevMsg: Message | null) => {
     if (!prevMsg) return false;
     if (currentMsg.sender_id !== prevMsg.sender_id) return false;
-    
+
     const timeDiff = (currentMsg.created_at?.toMillis?.() || 0) - (prevMsg.created_at?.toMillis?.() || 0);
     return timeDiff < 60000; // Group if within 1 minute
   };
@@ -334,13 +353,34 @@ export const Dashboard = () => {
 
     const updateConversations = async () => {
       const messagesRef = collection(db, 'private_messages');
-      
+      const groupsRef = collection(db, 'groups');
+
       const q1 = query(messagesRef, where('sender_id', '==', user.uid), orderBy('created_at', 'desc'));
       const q2 = query(messagesRef, where('receiver_id', '==', user.uid), orderBy('created_at', 'desc'));
+      const qGroups = query(groupsRef, where('members', 'array-contains', user.uid));
 
-      const [snapshot1, snapshot2] = await Promise.all([getDocs(q1), getDocs(q2)]);
+      const [snapshot1, snapshot2, groupsSnapshot] = await Promise.all([
+        getDocs(q1),
+        getDocs(q2),
+        getDocs(qGroups)
+      ]);
 
       const conversationMap = new Map<string, Conversation>();
+
+      // Process Groups
+      groupsSnapshot.forEach((doc) => {
+        const groupData = doc.data();
+        conversationMap.set(doc.id, {
+          userId: doc.id,
+          username: groupData.name,
+          avatarUrl: groupData.avatar_url,
+          lastMessage: groupData.description || 'Group Chat',
+          lastMessageTime: groupData.created_at,
+          unreadCount: 0,
+          online: false,
+          isGroup: true
+        });
+      });
 
       const processSnapshot = (snapshot: any, isSender: boolean) => {
         snapshot.forEach((doc: any) => {
@@ -348,7 +388,8 @@ export const Dashboard = () => {
           const otherUserId = isSender ? msg.receiver_id : msg.sender_id;
 
           const existing = conversationMap.get(otherUserId);
-          if (!existing || (msg.created_at?.toMillis?.() || 0) > (existing.lastMessageTime?.toMillis?.() || 0)) {
+          // Only update if it's not a group or if this message is newer and it is not a group convesation
+          if (!existing || (!existing.isGroup && (msg.created_at?.toMillis?.() || 0) > (existing.lastMessageTime?.toMillis?.() || 0))) {
             conversationMap.set(otherUserId, {
               userId: otherUserId,
               username: isSender ? msg.receiver_name : msg.sender_name,
@@ -357,6 +398,7 @@ export const Dashboard = () => {
               lastMessageTime: msg.created_at,
               unreadCount: 0,
               online: false,
+              isGroup: false
             });
           }
         });
@@ -367,11 +409,11 @@ export const Dashboard = () => {
 
       const profilesRef = collection(db, 'profiles');
       const profilesSnapshot = await getDocs(profilesRef);
-      
+
       profilesSnapshot.forEach((doc) => {
         const profile = doc.data();
         const conversation = conversationMap.get(doc.id);
-        if (conversation) {
+        if (conversation && !conversation.isGroup) {
           conversation.avatarUrl = profile.avatar_url || '';
           conversation.online = profile.online || false;
           conversation.username = profile.username || conversation.username;
@@ -380,7 +422,7 @@ export const Dashboard = () => {
 
       const unreadQuery = query(messagesRef, where('receiver_id', '==', user.uid), where('read', '==', false));
       const unreadSnapshot = await getDocs(unreadQuery);
-      
+
       unreadSnapshot.forEach((doc) => {
         const msg = doc.data();
         const conversation = conversationMap.get(msg.sender_id);
@@ -400,16 +442,22 @@ export const Dashboard = () => {
     updateConversations();
 
     const messagesRef = collection(db, 'private_messages');
-    
+    const groupsRef = collection(db, 'groups');
+
     // Listen for both sent and received messages to update conversation list
     const q1 = query(messagesRef, where('receiver_id', '==', user.uid), orderBy('created_at', 'desc'));
     const q2 = query(messagesRef, where('sender_id', '==', user.uid), orderBy('created_at', 'desc'));
-    
+    const qGroups = query(groupsRef, where('members', 'array-contains', user.uid));
+
     const unsubscribe1 = onSnapshot(q1, () => {
       updateConversations();
     });
-    
+
     const unsubscribe2 = onSnapshot(q2, () => {
+      updateConversations();
+    });
+
+    const unsubscribeGroups = onSnapshot(qGroups, () => {
       updateConversations();
     });
 
@@ -422,6 +470,7 @@ export const Dashboard = () => {
     return () => {
       unsubscribe1();
       unsubscribe2();
+      unsubscribeGroups();
       unsubscribe3();
     };
   }, [user]);
@@ -454,14 +503,14 @@ export const Dashboard = () => {
       receivedMessages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Message));
       const allMessages = [...sentMessages, ...receivedMessages];
       allMessages.sort((a, b) => (a.created_at?.toMillis?.() || 0) - (b.created_at?.toMillis?.() || 0));
-      
+
       // Play sound for new received messages
       const prevMessageCount = messages.filter(m => m.sender_id === selectedUser.id).length;
       const newMessageCount = receivedMessages.length;
       if (newMessageCount > prevMessageCount) {
         soundManager.playReceived();
       }
-      
+
       setMessages(allMessages);
 
       // Auto-scroll to bottom on new messages
@@ -493,14 +542,14 @@ export const Dashboard = () => {
       try {
         const profilesRef = collection(db, 'profiles');
         const snapshot = await getDocs(profilesRef);
-        
+
         const searchLower = searchQuery.toLowerCase().trim();
         const results = snapshot.docs
           .map(doc => ({ id: doc.id, ...doc.data() } as Profile))
           .filter(profile => {
             if (profile.id === user?.uid) return false;
             if (!profile.username) return false;
-            
+
             const username = profile.username.toLowerCase();
             return username.includes(searchLower) || username.startsWith(searchLower);
           })
@@ -574,11 +623,11 @@ export const Dashboard = () => {
     setMessages(prev => [...prev, tempMessage]);
     setNewMessage('');
     setReplyToMessage(null);
-    
+
     // Clear typing status
     const chatId = [user!.uid, selectedUser.id].sort().join('_');
     typingManager.clearTyping(chatId, user!.uid);
-    
+
     // Reset textarea height properly - wait for DOM to update
     requestAnimationFrame(() => {
       if (textareaRef.current) {
@@ -589,10 +638,10 @@ export const Dashboard = () => {
 
     try {
       await addDoc(collection(db, 'private_messages'), messageData);
-      
+
       // Play sent sound
       soundManager.playSent();
-      
+
       // Auto-scroll to bottom after sending
       setTimeout(() => scrollToBottom(true), 100);
     } catch (error) {
@@ -619,17 +668,14 @@ export const Dashboard = () => {
       </Helmet>
 
       {/* Sidebar */}
-      <div className={`bg-[#0e1621] border-r border-[#1a2332] flex flex-col transition-transform duration-300 ease-in-out overflow-hidden ${
-        isMobile 
-          ? `fixed inset-y-0 left-0 z-40 w-full transform ${
-              sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-            }`
-          : isTablet
-          ? `w-[320px] ${
-              sidebarOpen ? 'block' : 'hidden'
-            }`
+      <div className={`bg-[#0e1621] border-r border-[#1a2332] flex flex-col transition-transform duration-300 ease-in-out overflow-hidden ${isMobile
+        ? `fixed inset-y-0 left-0 z-40 w-full transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        }`
+        : isTablet
+          ? `w-[320px] ${sidebarOpen ? 'block' : 'hidden'
+          }`
           : 'w-[360px]'
-      }`}>
+        }`}>
         {/* User Header */}
         <div className="px-4 py-4 border-b border-[#1a2332] flex items-center justify-between">
           <button
@@ -639,13 +685,23 @@ export const Dashboard = () => {
             <Menu className="w-6 h-6" />
           </button>
           <h2 className="text-xl font-semibold text-white">Olam Chat</h2>
-          <button className="text-gray-400 hover:text-white transition-colors p-1 rounded-lg hover:bg-[#1a2332]">
-            <Search className="w-6 h-6" />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setShowCreateGroup(true)}
+              className="text-gray-400 hover:text-white transition-colors p-1 rounded-lg hover:bg-[#1a2332]"
+              title="Create Group"
+            >
+              <Plus className="w-6 h-6" />
+            </button>
+            <button className="text-gray-400 hover:text-white transition-colors p-1 rounded-lg hover:bg-[#1a2332]">
+              <Search className="w-6 h-6" />
+            </button>
+          </div>
         </div>
 
         {/* Search Bar */}
         <div className="px-3 py-2">
+
           <div className="relative">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
             <input
@@ -707,14 +763,27 @@ export const Dashboard = () => {
               <button
                 key={conv.userId}
                 onClick={() => {
-                  setSelectedUser({ id: conv.userId, username: conv.username, avatar_url: conv.avatarUrl, online: conv.online, last_seen: null });
+                  if (conv.isGroup) {
+                    setActiveGroup({
+                      id: conv.userId,
+                      name: conv.username,
+                      description: conv.lastMessage,
+                      members: [],
+                      admins: [],
+                      created_by: '',
+                      created_at: null
+                    });
+                    setSelectedUser(null);
+                  } else {
+                    setSelectedUser({ id: conv.userId, username: conv.username, avatar_url: conv.avatarUrl, online: conv.online, last_seen: null });
+                    setActiveGroup(null);
+                  }
                   if (isMobile) setSidebarOpen(false);
                 }}
-                className={`w-full flex items-center gap-3 px-3 py-3 cursor-pointer transition-all duration-150 border-b border-[#1a2332]/50 ${
-                  selectedUser?.id === conv.userId 
-                    ? 'bg-[#1a2332]' 
-                    : 'hover:bg-[#1a2332]/50 active:bg-[#1a2332]'
-                }`}
+                className={`w-full flex items-center gap-3 px-3 py-3 cursor-pointer transition-all duration-150 border-b border-[#1a2332]/50 ${(selectedUser?.id === conv.userId || activeGroup?.id === conv.userId)
+                  ? 'bg-[#1a2332]'
+                  : 'hover:bg-[#1a2332]/50 active:bg-[#1a2332]'
+                  }`}
               >
                 <div className="relative flex-shrink-0">
                   <Avatar
@@ -747,7 +816,7 @@ export const Dashboard = () => {
             ))
           )}
         </div>
-        
+
         {/* Floating Action Button */}
         <button
           onClick={() => {
@@ -766,11 +835,11 @@ export const Dashboard = () => {
       {menuOpen && (
         <>
           {/* Backdrop */}
-          <div 
+          <div
             className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40"
             onClick={() => setMenuOpen(false)}
           />
-          
+
           {/* Menu */}
           <div className="fixed left-0 top-0 bottom-0 w-[280px] bg-[#0e1621] z-50 border-r border-[#1a2332] shadow-xl transform transition-transform duration-300">
             <div className="flex flex-col h-full">
@@ -784,10 +853,10 @@ export const Dashboard = () => {
                   <X className="w-5 h-5" />
                 </button>
               </div>
-              
+
               {/* Menu Items */}
               <div className="flex-1 p-2">
-                <button 
+                <button
                   onClick={() => {
                     toggleSound();
                     setMenuOpen(false);
@@ -797,9 +866,9 @@ export const Dashboard = () => {
                   {soundMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
                   <span>{soundMuted ? 'Unmute sounds' : 'Mute sounds'}</span>
                 </button>
-                
+
                 {isAdmin && (
-                  <button 
+                  <button
                     onClick={() => {
                       navigate('/admin');
                       setMenuOpen(false);
@@ -810,8 +879,8 @@ export const Dashboard = () => {
                     <span>Admin Panel</span>
                   </button>
                 )}
-                
-                <button 
+
+                <button
                   onClick={() => {
                     setShowSettings(true);
                     setMenuOpen(false);
@@ -829,7 +898,13 @@ export const Dashboard = () => {
 
       {/* Chat Area */}
       <div className="flex-1 flex flex-col bg-[#121a24] relative overflow-hidden min-w-0">
-        {selectedUser ? (
+        {activeGroup ? (
+          <GroupChat
+            group={activeGroup}
+            onBack={() => setActiveGroup(null)}
+            onLeaveGroup={() => setActiveGroup(null)}
+          />
+        ) : selectedUser ? (
           <>
             <div className="px-4 md:px-6 py-3 border-b border-[#1a2332] flex items-center justify-between bg-[#0e1621] flex-shrink-0">
               {isMobile && (
@@ -878,7 +953,7 @@ export const Dashboard = () => {
                     <span className="w-2 h-2 bg-[#8B7FFF] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                   </div>
                   <span>
-                    {typingUsers.length === 1 
+                    {typingUsers.length === 1
                       ? `${typingUsers[0]} is typing...`
                       : `${typingUsers[0]} and ${typingUsers.length - 1} other${typingUsers.length > 2 ? 's' : ''} are typing...`
                     }
@@ -887,20 +962,19 @@ export const Dashboard = () => {
               </div>
             )}
 
-            <div 
+            <div
               ref={messagesContainerRef}
               className="flex-1 overflow-y-auto overflow-x-hidden px-4 md:px-6 py-4 bg-[#121a24] relative scrollbar-thin scrollbar-thumb-[#2a3544] scrollbar-track-transparent"
               style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}
             >
               {messages.map((msg, index) => {
                 const isSent = msg.sender_id === user.uid;
-                const msgUser = isSent ? user : selectedUser;
                 const msgUsername = isSent ? (user.displayName || 'User') : selectedUser.username;
                 const msgAvatar = isSent ? (user.photoURL || undefined) : selectedUser.avatar_url;
                 const msgUserId = isSent ? user.uid : selectedUser.id;
                 const prevMsg = index > 0 ? messages[index - 1] : null;
                 const isGrouped = shouldGroupMessages(msg, prevMsg);
-                
+
                 return (
                   <div key={msg.id} className={`flex items-end gap-2.5 ${isGrouped ? 'mb-1' : 'mb-4'} ${isSent ? 'flex-row-reverse' : ''} group`}>
                     {!isGrouped ? (
@@ -916,7 +990,7 @@ export const Dashboard = () => {
                     <div className="flex flex-col max-w-[60%] relative">
                       {/* Reply preview */}
                       {msg.replyTo && (
-                        <div 
+                        <div
                           onClick={() => scrollToMessage(msg.replyTo!.messageId)}
                           className={`mb-1 px-3 py-2 bg-[#1a2332] rounded-lg text-xs cursor-pointer hover:bg-[#252f3f] transition-colors ${isSent ? 'ml-auto' : ''}`}
                         >
@@ -928,19 +1002,18 @@ export const Dashboard = () => {
                           </div>
                         </div>
                       )}
-                      
-                      <div 
+
+                      <div
                         ref={(el) => {
                           if (el) messageRefs.current.set(msg.id, el);
                           else messageRefs.current.delete(msg.id);
                         }}
-                        className={`relative ${isSent ? 'bg-[#8B7FFF]' : 'bg-[#1a2332]'} text-white px-4 py-2.5 rounded-[18px] text-[14px] leading-relaxed break-words transition-all hover:shadow-lg ${
-                          isSent ? 'rounded-br-sm' : 'rounded-bl-sm'
-                        }`}
+                        className={`relative ${isSent ? 'bg-[#8B7FFF]' : 'bg-[#1a2332]'} text-white px-4 py-2.5 rounded-[18px] text-[14px] leading-relaxed break-words transition-all hover:shadow-lg ${isSent ? 'rounded-br-sm' : 'rounded-bl-sm'
+                          }`}
                         style={{ whiteSpace: 'pre-wrap', transition: 'background-color 0.3s ease' }}
                       >
                         {msg.content}
-                        
+
                         {/* Reply button on hover - desktop only */}
                         {!isMobile && (
                           <button
@@ -973,7 +1046,7 @@ export const Dashboard = () => {
                 );
               })}
               <div ref={messagesEndRef} />
-              
+
               {/* Scroll to bottom button */}
               {showScrollButton && (
                 <button
@@ -1001,7 +1074,7 @@ export const Dashboard = () => {
                   <span className="text-sm text-red-300 flex-1">{errorMessage}</span>
                 </div>
               )}
-              
+
               {/* Reply Preview */}
               {replyToMessage && (
                 <div className="mb-3 p-3 bg-[#1a2332] border-l-4 border-l-[#8B7FFF] rounded-lg flex items-start justify-between">
@@ -1024,7 +1097,7 @@ export const Dashboard = () => {
                   </button>
                 </div>
               )}
-              
+
               <form onSubmit={handleSendMessage} className="flex items-end gap-3">
                 <button type="button" className="text-gray-400 hover:text-white transition-colors mb-2 p-2 rounded-lg hover:bg-[#1a2332]">
                   <Paperclip className="w-5 h-5" />
@@ -1051,9 +1124,8 @@ export const Dashboard = () => {
                     rows={1}
                   />
                   {newMessage.length > MAX_MESSAGE_LENGTH * 0.8 && (
-                    <span className={`absolute right-4 bottom-3 text-xs px-1.5 py-0.5 bg-[#0e1621] rounded ${
-                      newMessage.length >= MAX_MESSAGE_LENGTH ? 'text-red-400 font-semibold' : 'text-gray-400'
-                    }`}>
+                    <span className={`absolute right-4 bottom-3 text-xs px-1.5 py-0.5 bg-[#0e1621] rounded ${newMessage.length >= MAX_MESSAGE_LENGTH ? 'text-red-400 font-semibold' : 'text-gray-400'
+                      }`}>
                       {newMessage.length}/{MAX_MESSAGE_LENGTH}
                     </span>
                   )}
@@ -1061,9 +1133,8 @@ export const Dashboard = () => {
                 <button
                   type="submit"
                   disabled={!newMessage.trim() || sending}
-                  className={`w-11 h-11 mb-2 bg-[#8B7FFF] text-white rounded-full flex items-center justify-center hover:bg-[#7B6FEF] disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-105 active:scale-95 flex-shrink-0 ${
-                    isShaking ? 'shake' : ''
-                  }`}
+                  className={`w-11 h-11 mb-2 bg-[#8B7FFF] text-white rounded-full flex items-center justify-center hover:bg-[#7B6FEF] disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-105 active:scale-95 flex-shrink-0 ${isShaking ? 'shake' : ''
+                    }`}
                   title="Send message (Enter)"
                 >
                   {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-4 h-4" />}
@@ -1093,6 +1164,18 @@ export const Dashboard = () => {
         )}
       </div>
 
+      <RoleSelectionModal
+        isOpen={showRoleSelection}
+        onRoleSelected={() => setShowRoleSelection(false)}
+      />
+      <CreateGroupModal
+        isOpen={showCreateGroup}
+        onClose={() => setShowCreateGroup(false)}
+        onGroupCreated={(group) => {
+          setShowCreateGroup(false);
+          setActiveGroup(group);
+        }}
+      />
       <SettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} user={user} />
     </div>
   );

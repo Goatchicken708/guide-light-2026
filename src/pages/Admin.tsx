@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { db } from '../lib/firebase';
 import { collection, getDocs, doc, updateDoc, query, orderBy, limit, getDoc } from 'firebase/firestore';
-import { Users, MessageSquare, Shield, Activity, Search, Ban, CheckCircle, Clock, UserCheck } from 'lucide-react';
+import { Users, MessageSquare, Shield, Activity, Search, Ban, CheckCircle, Clock } from 'lucide-react';
 
 interface User {
   uid: string;
@@ -60,18 +60,18 @@ export const Admin: React.FC = () => {
       console.log('Checking admin access for user:', user.uid);
       const profileDoc = await getDoc(doc(db, 'profiles', user.uid));
       console.log('Profile doc exists:', profileDoc.exists());
-      
+
       if (!profileDoc.exists()) {
         console.error('Profile not found');
         alert('Profile not found. Please contact support.');
         navigate('/dashboard');
         return;
       }
-      
+
       const profile = profileDoc.data();
       console.log('Profile data:', profile);
       console.log('User role:', profile?.role);
-      
+
       if (profile?.role !== 'admin') {
         alert('Access denied: Admin privileges required. Your role: ' + (profile?.role || 'none'));
         navigate('/dashboard');
@@ -112,7 +112,7 @@ export const Admin: React.FC = () => {
           const msgData = msgDoc.data();
           const senderProfile = usersData.find(u => u.uid === msgData.sender_id);
           const receiverProfile = usersData.find(u => u.uid === msgData.receiver_id);
-          
+
           return {
             id: msgDoc.id,
             ...msgData,
@@ -147,7 +147,7 @@ export const Admin: React.FC = () => {
         updated_at: new Date().toISOString()
       });
 
-      setUsers(users.map(u => 
+      setUsers(users.map(u =>
         u.uid === userId ? { ...u, banned: !currentBannedStatus } : u
       ));
 
@@ -158,7 +158,7 @@ export const Admin: React.FC = () => {
     }
   };
 
-  const filteredUsers = users.filter(u => 
+  const filteredUsers = users.filter(u =>
     u.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     u.email?.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -235,31 +235,28 @@ export const Admin: React.FC = () => {
         <div className="flex gap-4 mb-6 border-b border-gray-800">
           <button
             onClick={() => setActiveTab('users')}
-            className={`px-4 py-2 font-medium transition-colors ${
-              activeTab === 'users'
+            className={`px-4 py-2 font-medium transition-colors ${activeTab === 'users'
                 ? 'text-blue-500 border-b-2 border-blue-500'
                 : 'text-gray-400 hover:text-white'
-            }`}
+              }`}
           >
             Users
           </button>
           <button
             onClick={() => setActiveTab('messages')}
-            className={`px-4 py-2 font-medium transition-colors ${
-              activeTab === 'messages'
+            className={`px-4 py-2 font-medium transition-colors ${activeTab === 'messages'
                 ? 'text-blue-500 border-b-2 border-blue-500'
                 : 'text-gray-400 hover:text-white'
-            }`}
+              }`}
           >
             Messages
           </button>
           <button
             onClick={() => setActiveTab('stats')}
-            className={`px-4 py-2 font-medium transition-colors ${
-              activeTab === 'stats'
+            className={`px-4 py-2 font-medium transition-colors ${activeTab === 'stats'
                 ? 'text-blue-500 border-b-2 border-blue-500'
                 : 'text-gray-400 hover:text-white'
-            }`}
+              }`}
           >
             Statistics
           </button>
@@ -319,9 +316,8 @@ export const Admin: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">{u.email}</td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 text-xs rounded-full ${
-                          u.role === 'admin' ? 'bg-purple-500/20 text-purple-400' : 'bg-gray-700 text-gray-300'
-                        }`}>
+                        <span className={`px-2 py-1 text-xs rounded-full ${u.role === 'admin' ? 'bg-purple-500/20 text-purple-400' : 'bg-gray-700 text-gray-300'
+                          }`}>
                           {u.role || 'user'}
                         </span>
                       </td>
@@ -342,11 +338,10 @@ export const Admin: React.FC = () => {
                         {u.role !== 'admin' && (
                           <button
                             onClick={() => handleBanUser(u.uid, u.banned || false)}
-                            className={`px-3 py-1 rounded-lg font-medium transition-colors ${
-                              u.banned
+                            className={`px-3 py-1 rounded-lg font-medium transition-colors ${u.banned
                                 ? 'bg-green-600 hover:bg-green-700 text-white'
                                 : 'bg-red-600 hover:bg-red-700 text-white'
-                            }`}
+                              }`}
                           >
                             {u.banned ? 'Unban' : 'Ban'}
                           </button>

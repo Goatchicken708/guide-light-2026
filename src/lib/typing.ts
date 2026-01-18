@@ -1,6 +1,6 @@
 // Typing indicator management using Firestore
 import { db } from './firebase';
-import { doc, setDoc, deleteDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, deleteDoc, onSnapshot, serverTimestamp, query, collection, where, DocumentData, QuerySnapshot } from 'firebase/firestore';
 
 interface TypingStatus {
   isTyping: boolean;
@@ -45,9 +45,9 @@ class TypingManager {
   // Debounced typing notification
   debounceTyping(chatId: string, userId: string, username: string, delay = 3000) {
     if (this.typingTimeout) clearTimeout(this.typingTimeout);
-    
+
     this.setTyping(chatId, userId, username);
-    
+
     this.typingTimeout = setTimeout(() => {
       this.clearTyping(chatId, userId);
     }, delay);
@@ -55,28 +55,25 @@ class TypingManager {
 
   // Listen to typing status
   listenToTyping(
-    chatId: string, 
-    currentUserId: string, 
+    chatId: string,
+    currentUserId: string,
     callback: (typingUsers: string[]) => void
   ) {
-    // Listen to all typing statuses for this chat
-    const docRef = doc(db, 'typing_status', `${chatId}_typing`);
-    
-    return onSnapshot(docRef, (snapshot) => {
-      if (snapshot.exists()) {
-        const data = snapshot.data();
-        const typingUsers: string[] = [];
-        
-        Object.keys(data).forEach(key => {
-          if (key !== currentUserId && data[key]?.isTyping) {
-            typingUsers.push(data[key].username);
-          }
-        });
-        
-        callback(typingUsers);
-      } else {
-        callback([]);
-      }
+    // Listen to all typing statuses for this chat by subscribing to the collection
+    const q = query(
+      collection(db, 'typing_status'),
+      where('chatId', '==', chatId)
+    );
+
+    return onSnapshot(q, (snapshot: QuerySnapshot<DocumentData>) => {
+      const typingUsers: string[] = [];
+      snapshot.docs.forEach(doc => {
+        const data = doc.data();
+        if (data.userId !== currentUserId && data.isTyping) {
+          typingUsers.push(data.username);
+        }
+      });
+      callback(typingUsers);
     });
   }
 

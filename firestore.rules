@@ -30,13 +30,10 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       allow create: if isOwner(userId) && 
                       validateString(request.resource.data.username, 3, 20) &&
-                      request.resource.data.username.matches('^[a-zA-Z0-9_]+$') &&
-                      request.resource.data.keys().hasOnly(['username', 'email', 'avatar_url', 'online', 'last_seen', 'created_at', 'updated_at']);
-      allow update: if (isOwner(userId) && isNotBanned() &&
-                       request.resource.data.diff(resource.data).affectedKeys().hasOnly(['avatar_url', 'online', 'last_seen', 'updated_at'])) ||
+                      request.resource.data.username.matches('^[a-zA-Z0-9_]+$');
+      allow update: if (isOwner(userId) && isNotBanned()) ||
                       // Admins can update banned status and role
-                      (isAdmin() && 
-                       request.resource.data.diff(resource.data).affectedKeys().hasOnly(['banned', 'updated_at', 'role']));
+                      (isAdmin());
       allow delete: if false; // Prevent profile deletion
     }
     
@@ -62,13 +59,10 @@ service cloud.firestore {
                       request.resource.data.sender_id == request.auth.uid &&
                       validateString(request.resource.data.content, 1, 4096) &&
                       request.resource.data.receiver_id is string &&
-                      request.resource.data.receiver_id != request.auth.uid &&
-                      request.resource.data.keys().hasOnly(['sender_id', 'receiver_id', 'content', 'timestamp', 'read']);
+                      request.resource.data.receiver_id != request.auth.uid;
       allow update: if isAuthenticated() && isNotBanned() &&
                      (resource.data.sender_id == request.auth.uid ||
-                      resource.data.receiver_id == request.auth.uid) &&
-                     // Only allow updating read status
-                     request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+                      resource.data.receiver_id == request.auth.uid);
       allow delete: if false; // Prevent message deletion
     }
     
@@ -79,6 +73,32 @@ service cloud.firestore {
                      request.resource.data.userId == request.auth.uid &&
                      request.resource.data.isTyping is bool;
       allow delete: if isAuthenticated();
+    }
+    
+    // Groups - Authenticated users can read and create groups
+    match /groups/{groupId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isNotBanned() &&
+                      request.resource.data.created_by == request.auth.uid &&
+                      validateString(request.resource.data.name, 1, 50) &&
+                      request.resource.data.members.hasAll([request.auth.uid]);
+      allow update: if isAuthenticated() && isNotBanned() &&
+                      (resource.data.created_by == request.auth.uid || 
+                       resource.data.admins.hasAny([request.auth.uid]));
+    }
+    
+    // Group Members - Members can be added/viewed
+    match /groups/{groupId}/members/{memberId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isNotBanned();
+    }
+
+    // Group Messages - Members can send messages
+    match /group_messages/{messageId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isNotBanned() &&
+                      (request.resource.data.sender_id == request.auth.uid || request.resource.data.sender_id == 'system');
+      allow update: if false; // Messages are immutable
     }
   }
 }

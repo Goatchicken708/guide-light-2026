@@ -6,10 +6,11 @@ import { Navbar } from './components/Navbar';
 import { Home } from './pages/Home';
 import { Dashboard } from './pages/Dashboard';
 import { Admin } from './pages/Admin';
+import { AIAssistant } from './pages/AIAssistant';
 
 const AppContent = () => {
   const location = useLocation();
-  const showNavbar = location.pathname !== '/dashboard' && location.pathname !== '/' && location.pathname !== '/admin';
+  const showNavbar = location.pathname !== '/dashboard' && location.pathname !== '/' && location.pathname !== '/admin' && location.pathname !== '/ai-assistant';
 
   return (
     <div className="min-h-screen bg-gray-900">
@@ -18,6 +19,7 @@ const AppContent = () => {
         <Route path="/" element={<Home />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/admin" element={<Admin />} />
+        <Route path="/ai-assistant" element={<AIAssistant />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </div>

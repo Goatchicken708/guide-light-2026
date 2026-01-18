@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { Search, Mail, Send, Paperclip, Loader2, Settings, Menu, Volume2, VolumeX, ArrowDown, X, ArrowLeft, Reply, Check, CheckCheck, Shield, Edit, Plus } from 'lucide-react';
+import { Search, Mail, Send, Paperclip, Loader2, Settings, Menu, Volume2, VolumeX, ArrowDown, X, ArrowLeft, Reply, Check, CheckCheck, Shield, Edit, Plus, Users, Bot } from 'lucide-react';
 import { db } from '../lib/firebase';
 import { collection, query, where, orderBy, onSnapshot, addDoc, getDocs, Timestamp, writeBatch, doc, getDoc } from 'firebase/firestore';
 import { useAuth } from '../lib/AuthContext';
 import { SettingsModal } from '../components/SettingsModal';
 import { CreateGroupModal } from '../components/CreateGroupModal';
+import { MentorshipMatch } from '../components/MentorshipMatch';
 import { GroupChat } from '../components/GroupChat';
 import { RoleSelectionModal } from '../components/RoleSelectionModal';
 import { soundManager } from '../lib/sounds';
@@ -115,6 +116,7 @@ export const Dashboard = () => {
   const [selectedUser, setSelectedUser] = useState<Profile | null>(null);
   const [activeGroup, setActiveGroup] = useState<any>(null);
   const [showCreateGroup, setShowCreateGroup] = useState(false);
+  const [showMentorshipMatch, setShowMentorshipMatch] = useState(false);
   const [showRoleSelection, setShowRoleSelection] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
@@ -664,7 +666,7 @@ export const Dashboard = () => {
   return (
     <div className="h-screen w-screen bg-[#0e1621] flex overflow-hidden fixed inset-0">
       <Helmet>
-        <title>Messages - Olam Chat</title>
+        <title>Messages - Guide Light</title>
       </Helmet>
 
       {/* Sidebar */}
@@ -684,7 +686,7 @@ export const Dashboard = () => {
           >
             <Menu className="w-6 h-6" />
           </button>
-          <h2 className="text-xl font-semibold text-white">Olam Chat</h2>
+          <h2 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#34d399] to-[#10b981]">Guide Light</h2>
           <div className="flex items-center gap-1">
             <button
               onClick={() => setShowCreateGroup(true)}
@@ -693,8 +695,19 @@ export const Dashboard = () => {
             >
               <Plus className="w-6 h-6" />
             </button>
-            <button className="text-gray-400 hover:text-white transition-colors p-1 rounded-lg hover:bg-[#1a2332]">
-              <Search className="w-6 h-6" />
+            <button
+              onClick={() => setShowMentorshipMatch(true)}
+              className="text-gray-400 hover:text-white transition-colors p-1 rounded-lg hover:bg-[#1a2332]"
+              title="Find Mentor"
+            >
+              <Users className="w-6 h-6" />
+            </button>
+            <button
+              onClick={() => navigate('/ai-assistant')}
+              className="text-gray-400 hover:text-white transition-colors p-1 rounded-lg hover:bg-[#1a2332]"
+              title="Guide Light"
+            >
+              <Bot className="w-6 h-6" />
             </button>
           </div>
         </div>
@@ -1147,16 +1160,16 @@ export const Dashboard = () => {
             {(isMobile || isTablet) && !sidebarOpen && (
               <button
                 onClick={() => setSidebarOpen(true)}
-                className="absolute top-4 left-4 p-2 bg-[#8B7FFF] text-white rounded-full shadow-lg hover:bg-[#7B6FEF] transition-all"
+                className="absolute top-4 left-4 p-2 bg-[#10b981] text-white rounded-full shadow-lg hover:bg-[#059669] transition-all"
               >
                 <Menu className="w-6 h-6" />
               </button>
             )}
             <div className="text-center max-w-sm px-6">
-              <div className="w-24 h-24 bg-[#8B7FFF]/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Mail className="w-12 h-12 text-[#8B7FFF]" />
+              <div className="w-24 h-24 bg-[#10b981]/10 rounded-full flex items-center justify-center mx-auto mb-6 ring-1 ring-[#10b981]/20">
+                <Mail className="w-12 h-12 text-[#10b981]" />
               </div>
-              <h3 className="text-2xl font-bold text-white mb-3">Welcome to Olam Chat</h3>
+              <h3 className="text-2xl font-bold text-white mb-3">Welcome to Guide Light</h3>
               <p className="text-gray-400 mb-2">Select a conversation from the sidebar to start messaging</p>
               <p className="text-sm text-gray-500">or use the search bar to find someone new</p>
             </div>
@@ -1174,6 +1187,22 @@ export const Dashboard = () => {
         onGroupCreated={(group) => {
           setShowCreateGroup(false);
           setActiveGroup(group);
+        }}
+      />
+      <MentorshipMatch
+        isOpen={showMentorshipMatch}
+        onClose={() => setShowMentorshipMatch(false)}
+        onStartChat={(user) => {
+          setSelectedUser({
+            id: user.id,
+            username: user.username,
+            avatar_url: user.avatar_url,
+            online: user.online,
+            last_seen: null
+          });
+          setShowMentorshipMatch(false);
+          setActiveGroup(null);
+          if (isMobile) setSidebarOpen(false);
         }}
       />
       <SettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} user={user} />

@@ -1,18 +1,18 @@
-# 💬 Olam Chat
+# 💬 Guide Light
 
 <div align="center">
 
-![Olam Chat Logo](public/favicon.svg)
+![Guide Light Logo](public/favicon.svg)
 
 **A modern, secure, real-time messaging platform built with React, TypeScript, and Firebase**
 
-[![Live Demo](https://img.shields.io/badge/demo-live-success)](https://olam.abhiyanpa.in)
+[![Live Demo](https://img.shields.io/badge/demo-live-success)](https://guide-light.web.app)
 [![Firebase](https://img.shields.io/badge/Firebase-FFCA28?logo=firebase&logoColor=black)](https://firebase.google.com/)
 [![React](https://img.shields.io/badge/React-18-blue?logo=react)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)](https://www.typescriptlang.org/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-[Live Demo](https://olam.abhiyanpa.in) • [Features](#-features) • [Tech Stack](#-tech-stack) • [Getting Started](#-getting-started)
+[Live Demo](https://guide-light.web.app) • [Features](#-features) • [Tech Stack](#-tech-stack) • [Getting Started](#-getting-started)
 
 </div>
 
@@ -129,8 +129,8 @@
 
 1. **Clone the repository:**
 ```bash
-git clone https://github.com/abhiyanpa/olam-chat.git
-cd olam-chat
+git clone https://github.com/abhiyanpa/guide-light.git
+cd guide-light
 ```
 
 2. **Install dependencies:**
@@ -252,7 +252,7 @@ See [SECURITY.md](SECURITY.md) for detailed security documentation.
 ## 📂 Project Structure
 
 ```
-olam-chat/
+guide-light/
 ├── src/
 │   ├── components/         # Reusable React components
 │   │   ├── AuthModal.tsx   # Authentication modal (legacy)
@@ -477,7 +477,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## Project Structure
 
 ```
-olam-chat/
+guide-light/
 ├── src/
 │   ├── components/      # Reusable React components
 │   ├── lib/            # Firebase config and utilities

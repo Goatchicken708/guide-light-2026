@@ -1,6 +1,7 @@
 {
   "projects": {
-    "olamchat": "olam-chat"
+    "olamchat": "olam-chat",
+    "default": "project-ai-b65f8"
   },
   "targets": {},
   "etags": {}

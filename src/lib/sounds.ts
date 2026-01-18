@@ -18,7 +18,7 @@ class SoundManager {
     // Using simple tone generation as placeholder
     // Replace these with actual sound file URLs when ready
     // Suggested sources: freesound.org, zapsplat.com, or mixkit.co
-    
+
     // For now, we'll create simple audio contexts
     // To use real sounds, replace with: new Audio('/sounds/sent.mp3')
     try {
@@ -139,7 +139,7 @@ class SoundManager {
 
   private loadMutePreference(): boolean {
     try {
-      const stored = localStorage.getItem('olam-chat-sounds-muted');
+      const stored = localStorage.getItem('guide-light-sounds-muted');
       return stored === 'true';
     } catch {
       return false;
@@ -148,7 +148,7 @@ class SoundManager {
 
   private saveMutePreference() {
     try {
-      localStorage.setItem('olam-chat-sounds-muted', String(this.isMuted));
+      localStorage.setItem('guide-light-sounds-muted', String(this.isMuted));
     } catch (error) {
       console.warn('Failed to save sound preference:', error);
     }

@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
-import { Search, TrendingUp, Users, DollarSign, Award, Brain, BarChart3, Lightbulb, ChevronDown, ChevronUp, Bot, ArrowLeft, Sparkles, Loader2, Send } from 'lucide-react';
+import { Search, TrendingUp, Users, DollarSign, Award, Brain, BarChart3, Lightbulb, ChevronDown, ChevronUp, Bot, ArrowLeft, Sparkles, Loader2 } from 'lucide-react';
 
 interface Course {
     id: number;
@@ -47,7 +47,6 @@ export const AIAssistant = () => {
     const [courses, setCourses] = useState<Course[]>([]);
     const [loading, setLoading] = useState(false);
     const [loadingStep, setLoadingStep] = useState('');
-    const [initialLoad, setInitialLoad] = useState(true);
 
     const searchWeb = async (query: string): Promise<SearchResult[]> => {
         const apiKey = import.meta.env.VITE_GOOGLE_SEARCH_API_KEY;
@@ -86,7 +85,8 @@ export const AIAssistant = () => {
         const context = searchResults.map(r => `Title: ${r.title}\nSnippet: ${r.snippet}`).join('\n\n');
 
         const prompt = `
-            Based on the user query "${query}" and the search results below, generate a list of 5-8 relevant career paths or courses.
+            Based on the user query "${query}" and the search results below, generate a comprehensive list of 12-15 relevant career paths or courses.
+            Ensure the results are diverse and cover various aspects of the query, including emerging and niche fields if relevant.
             Return ONLY a valid JSON array matching this structure for each item:
             {
                 "id": number,
@@ -124,7 +124,7 @@ export const AIAssistant = () => {
                         { role: 'user', content: prompt }
                     ],
                     temperature: 0.5,
-                    max_tokens: 3000
+                    max_tokens: 4500
                 })
             });
 
@@ -150,7 +150,7 @@ export const AIAssistant = () => {
 
         setLoading(true);
         setCourses([]); // Clear previous results
-        setInitialLoad(false);
+        setCourses([]); // Clear previous results
 
         try {
             setLoadingStep('Searching live market data...');
@@ -170,13 +170,7 @@ export const AIAssistant = () => {
         }
     };
 
-    // Load some default trending courses on first mount
-    useEffect(() => {
-        if (initialLoad) {
-            setSearchQuery('Top Trending Tech Careers 2026');
-            handleSearch();
-        }
-    }, [initialLoad]);
+
 
     const filteredCourses = courses
         .filter(course =>
@@ -288,8 +282,8 @@ export const AIAssistant = () => {
                                         key={interest.value}
                                         onClick={() => setSelectedInterest(interest.value)}
                                         className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all ${selectedInterest === interest.value
-                                                ? 'bg-[#10b981] text-white shadow-lg shadow-[#10b981]/20'
-                                                : 'bg-[#0e1621] text-gray-400 hover:bg-[#2a3544] border border-[#2a3544]'
+                                            ? 'bg-[#10b981] text-white shadow-lg shadow-[#10b981]/20'
+                                            : 'bg-[#0e1621] text-gray-400 hover:bg-[#2a3544] border border-[#2a3544]'
                                             }`}
                                     >
                                         <Icon size={16} />

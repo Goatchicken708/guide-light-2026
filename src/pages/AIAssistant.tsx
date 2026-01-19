@@ -19,7 +19,7 @@ interface Course {
     description: string;
     topRoles: string[];
     certifications: string[];
-    sources: { title: string; link: string }[];
+    sources: { title: string; link: string; domain: string }[];
 }
 
 interface SearchResult {
@@ -83,7 +83,7 @@ export const AIAssistant = () => {
         const apiKey = import.meta.env.VITE_GROQ_API_KEY;
         if (!apiKey) return;
 
-        const context = searchResults.map(r => `Title: ${r.title}\nSnippet: ${r.snippet}`).join('\n\n');
+        const context = searchResults.map(r => `Title: ${r.title}\nSource: ${r.source}\nSnippet: ${r.snippet}`).join('\n\n');
 
         const prompt = `
             Based on the user query "${query}" and the search results below, generate a comprehensive list of 12-15 relevant career paths or courses.
@@ -104,10 +104,9 @@ export const AIAssistant = () => {
                 "jobOpenings": "string (e.g. 50,000+)",
                 "description": "string (brief summary)",
                 "topRoles": ["string", "string"],
-                "topRoles": ["string", "string"],
                 "certifications": ["string", "string"],
                 "sources": [
-                    { "title": "string (Source Title)", "link": "string (URL)" }
+                    { "title": "string (Title)", "link": "string (URL)", "domain": "string (e.g. linkedin.com)" }
                 ]
             }
 
@@ -491,10 +490,15 @@ export const AIAssistant = () => {
                                                                     href={source.link}
                                                                     target="_blank"
                                                                     rel="noopener noreferrer"
-                                                                    className="flex items-center gap-2 px-4 py-3 bg-[#0e1621] text-gray-300 rounded-xl text-xs border border-[#2a3544] hover:border-blue-400/50 hover:text-blue-400 transition-all truncate"
+                                                                    className="flex items-center gap-3 px-4 py-3 bg-[#0e1621] text-gray-300 rounded-xl text-xs border border-[#2a3544] hover:border-blue-400/50 hover:text-blue-400 transition-all group/link"
                                                                 >
-                                                                    <Link2 className="w-4 h-4 flex-shrink-0" />
-                                                                    <span className="truncate">{source.title}</span>
+                                                                    <div className="w-8 h-8 rounded-lg bg-[#1a2332] flex items-center justify-center flex-shrink-0 text-blue-400 group-hover/link:text-white transition-colors">
+                                                                        <Link2 size={14} />
+                                                                    </div>
+                                                                    <div className="flex flex-col overflow-hidden">
+                                                                        <span className="font-bold text-white truncate">{source.domain}</span>
+                                                                        <span className="text-gray-500 truncate text-[10px]">{source.title}</span>
+                                                                    </div>
                                                                 </a>
                                                             ))}
                                                         </div>

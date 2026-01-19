@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
-import { Search, TrendingUp, Users, DollarSign, Award, Brain, BarChart3, Lightbulb, ChevronDown, ChevronUp, Bot, ArrowLeft, Sparkles, Loader2 } from 'lucide-react';
+import { Search, TrendingUp, Users, DollarSign, Award, Brain, BarChart3, Lightbulb, ChevronDown, ChevronUp, Bot, ArrowLeft, Sparkles, Loader2, Link2 } from 'lucide-react';
 
 interface Course {
     id: number;
@@ -19,6 +19,7 @@ interface Course {
     description: string;
     topRoles: string[];
     certifications: string[];
+    sources: { title: string; link: string }[];
 }
 
 interface SearchResult {
@@ -103,7 +104,11 @@ export const AIAssistant = () => {
                 "jobOpenings": "string (e.g. 50,000+)",
                 "description": "string (brief summary)",
                 "topRoles": ["string", "string"],
-                "certifications": ["string", "string"]
+                "topRoles": ["string", "string"],
+                "certifications": ["string", "string"],
+                "sources": [
+                    { "title": "string (Source Title)", "link": "string (URL)" }
+                ]
             }
 
             Search Context:
@@ -474,6 +479,27 @@ export const AIAssistant = () => {
                                                         <p className="text-xl font-bold text-white uppercase">{course.demandTrend}</p>
                                                     </div>
                                                 </div>
+
+                                                {/* Sources Section */}
+                                                {course.sources && course.sources.length > 0 && (
+                                                    <div>
+                                                        <h4 className="text-xs font-bold text-blue-400 uppercase tracking-widest mb-4">Data Sources:</h4>
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                            {course.sources.map((source, idx) => (
+                                                                <a
+                                                                    key={idx}
+                                                                    href={source.link}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="flex items-center gap-2 px-4 py-3 bg-[#0e1621] text-gray-300 rounded-xl text-xs border border-[#2a3544] hover:border-blue-400/50 hover:text-blue-400 transition-all truncate"
+                                                                >
+                                                                    <Link2 className="w-4 h-4 flex-shrink-0" />
+                                                                    <span className="truncate">{source.title}</span>
+                                                                </a>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
 
                                                 <button className="w-full py-4 bg-gradient-to-r from-[#10b981] to-[#059669] text-white rounded-xl font-black text-sm uppercase tracking-widest shadow-lg shadow-[#10b981]/20 transform hover:scale-[1.01] transition-all">
                                                     Unlock Full AI Analysis

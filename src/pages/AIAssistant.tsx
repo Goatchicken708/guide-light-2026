@@ -598,68 +598,64 @@ export const AIAssistant = () => {
                                         </div>
                                     )}
                                 </>
-                            )}
-                        </>
-                    ) : (
-                        <div className="max-w-4xl mx-auto">
-                            <div className="bg-[#1a2332] rounded-2xl shadow-xl border border-[#2a3544] h-[calc(100vh-250px)] flex flex-col">
-                                {/* Chat Messages */}
-                                <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                                    {chatMessages.length === 0 ? (
-                                        <div className="h-full flex flex-col items-center justify-center text-center opacity-50">
-                                            <Bot className="w-16 h-16 text-[#10b981] mb-4" />
-                                            <h3 className="text-xl font-bold text-white mb-2">How can I help you today?</h3>
-                                            <p className="text-gray-400 max-w-sm">Ask about specific courses, best colleges, career comparisons, or any educational topic.</p>
-                                        </div>
-                                    ) : (
-                                        chatMessages.map((msg, idx) => (
-                                            <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                                <div className={`max-w-[80%] rounded-2xl p-4 ${msg.role === 'user'
-                                                    ? 'bg-[#10b981] text-white'
-                                                    : 'bg-[#0e1621] text-gray-200 border border-[#2a3544]'
-                                                    }`}>
-                                                    <div className="whitespace-pre-wrap">{msg.content}</div>
+                            ) : (
+                            <div className="max-w-4xl mx-auto">
+                                <div className="bg-[#1a2332] rounded-2xl shadow-xl border border-[#2a3544] h-[calc(100vh-250px)] flex flex-col">
+                                    {/* Chat Messages */}
+                                    <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                                        {chatMessages.length === 0 ? (
+                                            <div className="h-full flex flex-col items-center justify-center text-center opacity-50">
+                                                <Bot className="w-16 h-16 text-[#10b981] mb-4" />
+                                                <h3 className="text-xl font-bold text-white mb-2">How can I help you today?</h3>
+                                                <p className="text-gray-400 max-w-sm">Ask about specific courses, best colleges, career comparisons, or any educational topic.</p>
+                                            </div>
+                                        ) : (
+                                            chatMessages.map((msg, idx) => (
+                                                <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                                    <div className={`max-w-[80%] rounded-2xl p-4 ${msg.role === 'user'
+                                                        ? 'bg-[#10b981] text-white'
+                                                        : 'bg-[#0e1621] text-gray-200 border border-[#2a3544]'
+                                                        }`}>
+                                                        <div className="whitespace-pre-wrap">{msg.content}</div>
+                                                    </div>
+                                                </div>
+                                            ))
+                                        )}
+                                        {isChatLoading && (
+                                            <div className="flex justify-start">
+                                                <div className="bg-[#0e1621] border border-[#2a3544] rounded-2xl p-4 flex items-center gap-2">
+                                                    <Loader2 className="w-4 h-4 text-[#10b981] animate-spin" />
+                                                    <span className="text-sm text-gray-400">Consulting live sources...</span>
                                                 </div>
                                             </div>
-                                        ))
-                                    )}
-                                    {isChatLoading && (
-                                        <div className="flex justify-start">
-                                            <div className="bg-[#0e1621] border border-[#2a3544] rounded-2xl p-4 flex items-center gap-2">
-                                                <Loader2 className="w-4 h-4 text-[#10b981] animate-spin" />
-                                                <span className="text-sm text-gray-400">Consulting live sources...</span>
-                                            </div>
-                                        </div>
-                                    )}
+                                        )}
+                                    </div>
+
                                 </div>
 
-                            </div>
-
-                            {/* Input Area */}
-                            <div className="p-4 border-t border-[#2a3544] bg-[#0e1621]/50">
-                                <form onSubmit={handleChatSubmit} className="relative">
-                                    <input
-                                        type="text"
-                                        value={chatInput}
-                                        onChange={(e) => setChatInput(e.target.value)}
-                                        placeholder="Ask about colleges, course details, or career advice..."
-                                        className="w-full pl-4 pr-12 py-4 bg-[#0e1621] border border-[#2a3544] rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#10b981] focus:border-transparent transition-all"
-                                    />
-                                    <button
-                                        type="submit"
-                                        disabled={isChatLoading || !chatInput.trim()}
-                                        className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-[#10b981] text-white rounded-lg hover:bg-[#059669] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                    >
-                                        <Bot className="w-5 h-5" />
-                                    </button>
-                                </form>
+                                {/* Input Area */}
+                                <div className="p-4 border-t border-[#2a3544] bg-[#0e1621]/50">
+                                    <form onSubmit={handleChatSubmit} className="relative">
+                                        <input
+                                            type="text"
+                                            value={chatInput}
+                                            onChange={(e) => setChatInput(e.target.value)}
+                                            placeholder="Ask about colleges, course details, or career advice..."
+                                            className="w-full pl-4 pr-12 py-4 bg-[#0e1621] border border-[#2a3544] rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#10b981] focus:border-transparent transition-all"
+                                        />
+                                        <button
+                                            type="submit"
+                                            disabled={isChatLoading || !chatInput.trim()}
+                                            className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-[#10b981] text-white rounded-lg hover:bg-[#059669] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                        >
+                                            <Bot className="w-5 h-5" />
+                                        </button>
+                                    </form>
+                                </div>
                             </div>
                         </div>
-                        </div>
+                        )}
+                </div>
             </div>
-        )
-    }
-            </div >
-        </div >
-    );
-};
+        );
+    };
